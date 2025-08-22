@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocuSign Pro | Document Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #4361ee;
+      --primary-light: #eef2ff;
+      --secondary-color: #3f37c9;
+      --success-color: #4cc9f0;
+      --warning-color: #f8961e;
+      --danger-color: #f94144;
+      --dark-color: #1a1b25;
+      --light-color: #f8f9fa;
+      --gray-color: #6c757d;
+      --border-radius: 12px;
+      --box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    
+    body {
+      background-color: #f5f7ff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      color: var(--dark-color);
+    }
+    
+    .navbar-brand {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    
+    .header {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+    
+    .document-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .document-card {
+      background: white;
+      border: none;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      transition: var(--transition);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    .document-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    
+    .card-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      padding: 1.25rem;
+      border-bottom: none;
+    }
+    
+    .card-title {
+      font-weight: 600;
+      margin-bottom: 0;
+      font-size: 1.1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .card-body {
+      padding: 1.5rem;
+      flex-grow: 1;
+    }
+    
+    .document-meta {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+      color: var(--gray-color);
+    }
+    
+    .document-meta i {
+      margin-right: 0.5rem;
+      width: 20px;
+      text-align: center;
+      color: var(--primary-color);
+    }
+    
+    .card-footer {
+      background: var(--primary-light);
+      border-top: 1px solid rgba(0,0,0,0.05);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .status-badge {
+      padding: 0.35rem 0.85rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-pending {
+      background-color: rgba(248, 150, 30, 0.15);
+      color: var(--warning-color);
+    }
+    
+    .status-completed {
+      background-color: rgba(76, 201, 240, 0.15);
+      color: var(--success-color);
+    }
+    
+    .status-failed {
+      background-color: rgba(249, 65, 68, 0.15);
+      color: var(--danger-color);
+    }
+    
+    .btn-view {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .btn-view:hover {
+      background-color: var(--secondary-color);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(67, 97, 238, 0.3);
+    }
+    
+    .file-icon {
+      font-size: 1.75rem;
+      color: var(--primary-color);
+      margin-right: 0.75rem;
+    }
+    
+    .document-type {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    
+    .file-extension {
+      background-color: rgba(67, 97, 238, 0.1);
+      color: var(--primary-color);
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--gray-color);
+      grid-column: 1 / -1;
+    }
+    
+    .empty-state i {
+      font-size: 3.5rem;
+      margin-bottom: 1.5rem;
+      color: #dee2e6;
+    }
+    
+    .empty-state h4 {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+      max-width: 400px;
+      margin: 0 auto 1.5rem;
+    }
+    
+    .modal-fullscreen {
+      max-width: 100%;
+      margin: 0;
+    }
+    
+    .modal-fullscreen .modal-content {
+      height: 100vh;
+      border-radius: 0;
+    }
+    
+    .pdf-toolbar {
+      background: white;
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .pdf-container {
+      flex-grow: 1;
+      overflow: auto;
+      position: relative;
+      background-color: #e9ecef;
+      text-align: center;
+    }
+    
+    #pdf-viewer {
+      display: inline-block;
+      padding: 1rem 0;
+    }
+    
+    .canvas-container {
+      position: relative;
+      margin: 1rem auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      background: white;
+    }
+    
+    .signature-placeholder {
+      position: absolute;
+      border: 2px dashed var(--primary-color);
+      background-color: rgba(67, 97, 238, 0.1);
+      cursor: move;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: var(--primary-color);
+      font-weight: 500;
+      user-select: none;
+      min-width: 100px;
+      min-height: 100px;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+    
+    .signature-placeholder.dragging {
+      border-style: solid;
+      background-color: rgba(67, 97, 238, 0.2);
+      box-shadow: 0 0 0 2px white, 0 0 0 4px var(--primary-color);
+    }
+    
+    .placeholder-controls {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+      cursor: pointer;
+      z-index: 10;
+      color: var(--danger-color);
+      transition: var(--transition);
+    }
+    
+    .placeholder-controls:hover {
+      background-color: var(--danger-color);
+      color: white;
+      transform: scale(1.1);
+    }
+    
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .page-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .btn-pdf {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+    
+    .btn-pdf:hover {
+      transform: translateY(-2px);
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    /* Animation for placeholders */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .signature-placeholder {
+      animation: fadeIn 0.2s ease-out;
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      width: 2.5rem;
+      height: 2.5rem;
+      border: 0.25em solid rgba(67, 97, 238, 0.2);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      .document-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .pdf-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .pdf-toolbar > div {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid py-3">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white rounded-3 mb-4 px-3">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <i class="bi bi-file-earmark-lock-fill me-2"></i>
+          DocuSign Pro
+        </a>
+        <button class="btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+          <i class="bi bi-plus-circle-fill me-2"></i>Create Document
+        </button>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div>
+            <h2 class="fw-bold mb-1">Your Documents</h2>
+            <p class="text-muted mb-0">Prepare and manage documents for electronic signing</p>
+          </div>
+          <div class="d-flex gap-2">
+            <div class="input-group" style="max-width: 300px;">
+              <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" placeholder="Search documents...">
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-funnel"></i> Filter
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">All Documents</a></li>
+                <li><a class="dropdown-item" href="#">Pending</a></li>
+                <li><a class="dropdown-item" href="#">Completed</a></li>
+                <li><a class="dropdown-item" href="#">Drafts</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="documentContainer" class="document-grid"></div>
+      <div id="emptyState" class="empty-state d-none"></div>
+    </div>
+  </div>
+
+  <!-- Upload Document Modal -->
+  <div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="uploadDocumentModalLabel">Upload New Document</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="uploadForm" novalidate>
+            <div id="upload-error-alert" class="alert alert-danger d-none" role="alert"></div>
+            <div class="mb-3">
+              <label for="docTitle" class="form-label">Document Title <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="docTitle" name="title" required placeholder="Contract Agreement">
+            </div>
+            <div class="mb-3">
+              <label for="uploadedBy" class="form-label">Your Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="uploadedBy" name="uploaded_by" required placeholder="John Doe">
+            </div>
+            <div class="mb-4">
+              <label for="docFile" class="form-label">PDF Document <span class="text-danger">*</span></label>
+              <div class="file-upload-wrapper">
+                <input class="form-control" type="file" id="docFile" name="file" accept=".pdf" required>
+                <small class="text-muted">Max file size: 10MB</small>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitUploadBtn" form="uploadForm">
+            <span class="spinner-border spinner-border-sm d-none me-1" role="status" aria-hidden="true"></span>
+            Upload Document
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Viewer Modal -->
+  <div class="modal fade" id="pdfModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+      <div class="modal-content">
+        <div class="pdf-toolbar">
+          <div class="page-controls">
+            <button class="btn btn-outline-secondary btn-pdf" id="prevPage">
+              <i class="bi bi-chevron-left"></i> Previous
+            </button>
+            <span id="pageInfo" class="px-2">Page 1 of 1</span>
+            <button class="btn btn-outline-secondary btn-pdf" id="nextPage">
+              Next <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-pdf" id="addSignature">
+              <i class="bi bi-pen-fill"></i> Add Signature Placeholder
+            </button>
+            <button class="btn btn-success btn-pdf" id="saveDocument">
+              <i class="bi bi-send-fill"></i> Save & Get Link
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-pdf" data-bs-dismiss="modal">
+              <i class="bi bi-x-lg"></i> Close
+            </button>
+          </div>
+        </div>
+        <div class="pdf-container" id="pdf-container">
+          <div id="pdf-viewer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Link Modal -->
+  <div class="modal fade" id="sendLinkModal" tabindex="-1" aria-labelledby="sendLinkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="sendLinkModalLabel">
+            <i class="bi bi-link-45deg me-2"></i>Signing Link Ready
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            Share this link with the signer. When they open it, they'll see the document with signature fields ready for signing.
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Signing Link</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="clientLinkInput" readonly>
+              <button class="btn btn-outline-secondary" type="button" id="copyLinkBtn">
+                <i class="bi bi-clipboard"></i> Copy
+              </button>
+            </div>
+          </div>
+          <div id="copy-success" class="alert alert-success d-none">
+            <i class="bi bi-check-circle-fill me-2"></i> Link copied to clipboard!
+          </div>
+          <div class="mt-3">
+            <h6 class="mb-2">Quick Actions:</h6>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-outline-primary">
+                <i class="bi bi-envelope me-1"></i> Email to Signer
+              </button>
+              <button class="btn btn-outline-secondary">
+                <i class="bi bi-whatsapp me-1"></i> Share via WhatsApp
+              </button>
+              <button class="btn btn-outline-dark">
+                <i class="bi bi-slack me-1"></i> Share on Slack
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a id="openLinkBtn" href="#" target="_blank" class="btn btn-success">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Open Link
+          </a>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+    let currentDocId = null; 
+    let documentsData = []; 
+    let documentPlaceholders = {}; 
+    
+    let currentPdf = null, currentPage = 1, totalPages = 1, pdfScale = 1.5;
+    let placeholders = [];
+    let isAddingPlaceholder = false;
+    let isDragging = false, dragOffsetX = 0, dragOffsetY = 0;
+
+    const pdfModal = new bootstrap.Modal(document.getElementById('pdfModal'));
+    const sendLinkModal = new bootstrap.Modal(document.getElementById('sendLinkModal')); 
+    const pdfContainer = document.getElementById('pdf-container');
+    const pdfViewer = document.getElementById('pdf-viewer');
+    const pageInfo = document.getElementById('pageInfo');
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const addSignatureBtn = document.getElementById('addSignature');
+    const saveDocumentBtn = document.getElementById('saveDocument');
+    
+    function getStatusBadge(status) { 
+      const lower = status.toLowerCase(); 
+      if (lower.includes('pending')) return 'status-badge status-pending'; 
+      if (lower.includes('complete')) return 'status-badge status-completed'; 
+      if (lower.includes('fail') || lower.includes('error')) return 'status-badge status-failed'; 
+      return 'status-badge'; 
+    }
+    
+    function getFileIcon(filename) { 
+      const extension = filename.split('.').pop().toLowerCase(); 
+      const icons = { 
+        pdf: 'file-earmark-pdf-fill', 
+        doc: 'file-earmark-word-fill', 
+        docx: 'file-earmark-word-fill', 
+        xls: 'file-earmark-excel-fill', 
+        xlsx: 'file-earmark-excel-fill', 
+        ppt: 'file-earmark-ppt-fill', 
+        pptx: 'file-earmark-ppt-fill', 
+        txt: 'file-earmark-text-fill', 
+        jpg: 'file-earmark-image-fill', 
+        jpeg: 'file-earmark-image-fill', 
+        png: 'file-earmark-image-fill', 
+        gif: 'file-earmark-image-fill' 
+      }; 
+      return icons[extension] || 'file-earmark-fill'; 
+    }
+
+    function viewDocument(url, docId) {
+      currentDocId = docId;
+      placeholders = documentPlaceholders[docId] ? JSON.parse(JSON.stringify(documentPlaceholders[docId])) : [];
+      currentPdf = null;
+      currentPage = 1;
+      resetAddMode();
+      
+      // Show loading state with animation
+      pdfViewer.innerHTML = `
+        <div class="d-flex flex-column justify-content-center align-items-center h-100 mt-5">
+          <div class="spinner mb-3"></div>
+          <p class="text-muted">Loading document...</p>
+        </div>`;
+      
+      pdfModal.show();
+      
+      pdfjsLib.getDocument(url).promise.then(pdf => {
+        currentPdf = pdf;
+        totalPages = pdf.numPages;
+        renderPage(currentPage);
+      }).catch(error => {
+        console.error('Error loading PDF:', error);
+        pdfViewer.innerHTML = `
+          <div class="alert alert-danger m-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Failed to load PDF document. Please try again.
+          </div>`;
+      });
+    }
+
+    async function renderPage(pageNum) { 
+      if (!currentPdf) return; 
+      currentPage = pageNum; 
+      pdfViewer.innerHTML = ''; 
+      try { 
+        const page = await currentPdf.getPage(pageNum); 
+        const viewport = page.getViewport({ scale: pdfScale }); 
+        const canvas = document.createElement('canvas'); 
+        canvas.getContext('2d'); 
+        canvas.height = viewport.height; 
+        canvas.width = viewport.width; 
+        
+        const canvasContainer = document.createElement('div'); 
+        canvasContainer.className = 'canvas-container'; 
+        canvasContainer.style.width = `${viewport.width}px`; 
+        canvasContainer.style.height = `${viewport.height}px`; 
+        canvasContainer.appendChild(canvas); 
+        pdfViewer.appendChild(canvasContainer); 
+        
+        await page.render({ 
+          canvasContext: canvas.getContext('2d'), 
+          viewport: viewport 
+        }).promise; 
+        
+        renderPlaceholdersForCurrentPage(); 
+        setupPlaceholderInteraction(canvasContainer); 
+      } catch (error) { 
+        console.error('Error rendering page:', error); 
+        pdfViewer.innerHTML = `
+          <div class="alert alert-danger m-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Failed to render PDF page.
+          </div>`; 
+      } finally { 
+        updatePageInfo(); 
+      } 
+    }
+    
+    function renderPlaceholdersForCurrentPage() { 
+      const canvasContainer = pdfViewer.querySelector('.canvas-container'); 
+      if (!canvasContainer) return; 
+      
+      // Remove existing placeholders
+      canvasContainer.querySelectorAll('.signature-placeholder').forEach(el => el.remove()); 
+      
+      const viewport = { 
+        width: canvasContainer.offsetWidth, 
+        height: canvasContainer.offsetHeight 
+      }; 
+      
+      // Filter placeholders for current page and render them
+      placeholders
+        .filter(p => p.page === currentPage)
+        .forEach(placeholderData => { 
+          const placeholderEl = createPlaceholderElement(placeholderData, viewport); 
+          canvasContainer.appendChild(placeholderEl); 
+        }); 
+    }
+    
+    function createPlaceholderElement(placeholderData, viewport) {
+        const el = document.createElement('div');
+        el.className = 'signature-placeholder';
+        el.dataset.id = placeholderData.id;
+        el.style.left = `${placeholderData.x * viewport.width}px`;
+        el.style.top = `${placeholderData.y * viewport.height}px`;
+        el.style.width = `${placeholderData.width * viewport.width}px`;
+        el.style.height = `${placeholderData.width * viewport.width}px`; // Force square shape
+        el.innerHTML = `
+            <span>${placeholderData.type}</span>
+            <div class="placeholder-controls" data-action="delete">
+              <i class="bi bi-x-lg"></i>
+            </div>`;
+        return el;
+    }
+
+    function setupPlaceholderInteraction(canvasContainer) {
+        // Click handler for adding new placeholders
+        canvasContainer.addEventListener('click', e => {
+            if (!isAddingPlaceholder || e.target.closest('.signature-placeholder')) return;
+            
+            const rect = canvasContainer.getBoundingClientRect();
+            const viewport = { width: rect.width, height: rect.height };
+            
+            // Set square dimensions (120px x 120px)
+            const placeholderSizePx = 120;
+            
+            const newPlaceholder = { 
+                id: Date.now().toString(), 
+                page: currentPage, 
+                type: 'Signature', 
+                x: (e.clientX - rect.left - (placeholderSizePx / 2)) / viewport.width, 
+                y: (e.clientY - rect.top - (placeholderSizePx / 2)) / viewport.height, 
+                width: placeholderSizePx / viewport.width, 
+                height: placeholderSizePx / viewport.width // Force square shape
+            };
+            
+            placeholders.push(newPlaceholder);
+            renderPlaceholdersForCurrentPage();
+            resetAddMode();
+            
+            // Show success feedback
+            const feedback = document.createElement('div');
+            feedback.className = 'position-fixed bg-success text-white px-3 py-2 rounded';
+            feedback.style.left = `${e.clientX}px`;
+            feedback.style.top = `${e.clientY - 40}px`;
+            feedback.style.zIndex = '9999';
+            feedback.innerHTML = '<i class="bi bi-check-circle me-2"></i>Signature field added';
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                feedback.style.opacity = '0';
+                feedback.style.transform = 'translateY(-10px)';
+                setTimeout(() => feedback.remove(), 300);
+            }, 1000);
+        });
+
+        // Mouse down handler for existing placeholders
+        canvasContainer.addEventListener('mousedown', e => {
+            const placeholderEl = e.target.closest('.signature-placeholder');
+            if (!placeholderEl) return;
+            
+            const isDeleteButton = e.target.closest('[data-action="delete"]');
+
+            if (isDeleteButton) {
+                e.preventDefault();
+                const id = placeholderEl.dataset.id;
+                placeholders = placeholders.filter(p => p.id !== id);
+                
+                // Add fade-out animation before removing
+                placeholderEl.style.opacity = '0';
+                placeholderEl.style.transform = 'scale(0.9)';
+                setTimeout(() => placeholderEl.remove(), 200);
+                return;
+            }
+            
+            // Only allow dragging (no resizing)
+            e.preventDefault();
+            isDragging = true;
+            resetAddMode();
+            pdfContainer.style.cursor = 'grabbing';
+            
+            const rect = placeholderEl.getBoundingClientRect();
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+            
+            placeholderEl.classList.add('dragging');
+            document.addEventListener('mousemove', handleDrag);
+            document.addEventListener('mouseup', stopDrag);
+        });
+    }
+
+    function handleDrag(e) { 
+        if (!isDragging) return; 
+        const placeholderEl = document.querySelector('.signature-placeholder.dragging'); 
+        const canvasContainer = pdfViewer.querySelector('.canvas-container'); 
+        if (!placeholderEl || !canvasContainer) return; 
+        
+        const containerRect = canvasContainer.getBoundingClientRect(); 
+        let newX = e.clientX - containerRect.left - dragOffsetX; 
+        let newY = e.clientY - containerRect.top - dragOffsetY; 
+        
+        // Constrain to container bounds
+        newX = Math.max(0, Math.min(newX, containerRect.width - placeholderEl.offsetWidth)); 
+        newY = Math.max(0, Math.min(newY, containerRect.height - placeholderEl.offsetHeight)); 
+        
+        placeholderEl.style.left = `${newX}px`; 
+        placeholderEl.style.top = `${newY}px`; 
+    }
+    
+    function stopDrag() { 
+        if (!isDragging) return; 
+        isDragging = false; 
+        pdfContainer.style.cursor = 'default'; 
+        
+        const placeholderEl = document.querySelector('.signature-placeholder.dragging'); 
+        const canvasContainer = pdfViewer.querySelector('.canvas-container'); 
+        
+        if (placeholderEl && canvasContainer) { 
+            const containerRect = canvasContainer.getBoundingClientRect(); 
+            const id = placeholderEl.dataset.id; 
+            const placeholderData = placeholders.find(p => p.id === id); 
+            
+            if (placeholderData) { 
+                // Update position in our data model
+                placeholderData.x = parseFloat(placeholderEl.style.left) / containerRect.width; 
+                placeholderData.y = parseFloat(placeholderEl.style.top) / containerRect.height; 
+            } 
+            
+            placeholderEl.classList.remove('dragging');
+        } 
+        
+        document.removeEventListener('mousemove', handleDrag); 
+        document.removeEventListener('mouseup', stopDrag); 
+    }
+
+    function updatePageInfo() { 
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`; 
+        prevPageBtn.disabled = currentPage <= 1; 
+        nextPageBtn.disabled = currentPage >= totalPages; 
+    }
+    
+    function resetAddMode() { 
+        isAddingPlaceholder = false; 
+        pdfContainer.style.cursor = 'default'; 
+        addSignatureBtn.classList.remove('btn-primary'); 
+        addSignatureBtn.classList.add('btn-outline-primary'); 
+    }
+
+    // Event listeners for page navigation
+    prevPageBtn.addEventListener('click', () => { 
+        if (currentPage > 1) renderPage(currentPage - 1); 
+    });
+    
+    nextPageBtn.addEventListener('click', () => { 
+        if (currentPage < totalPages) renderPage(currentPage + 1); 
+    });
+    
+    // Toggle add signature mode
+    addSignatureBtn.addEventListener('click', function() { 
+        isAddingPlaceholder = !isAddingPlaceholder; 
+        this.classList.toggle('btn-primary'); 
+        this.classList.toggle('btn-outline-primary'); 
+        pdfContainer.style.cursor = isAddingPlaceholder ? 'crosshair' : 'default'; 
+        
+        if (isAddingPlaceholder) {
+            // Show tooltip feedback
+            const tooltip = document.createElement('div');
+            tooltip.className = 'position-fixed bg-dark text-white px-3 py-2 rounded';
+            tooltip.style.left = '50%';
+            tooltip.style.top = '100px';
+            tooltip.style.transform = 'translateX(-50%)';
+            tooltip.style.zIndex = '9999';
+            tooltip.innerHTML = '<i class="bi bi-mouse me-2"></i>Click on the document to place signature field';
+            document.body.appendChild(tooltip);
+            
+            setTimeout(() => {
+                tooltip.style.opacity = '0';
+                setTimeout(() => tooltip.remove(), 300);
+            }, 3000);
+        }
+    });
+    
+    // Save document handler
+    saveDocumentBtn.addEventListener('click', () => {
+        if (placeholders.length === 0) {
+            // Show error feedback
+            const alert = document.createElement('div');
+            alert.className = 'position-fixed bg-danger text-white px-3 py-2 rounded';
+            alert.style.left = '50%';
+            alert.style.top = '100px';
+            alert.style.transform = 'translateX(-50%)';
+            alert.style.zIndex = '9999';
+            alert.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Please add at least one signature field';
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            }, 3000);
+            return;
+        }
+        
+        // Save placeholders for this document
+        documentPlaceholders[currentDocId] = JSON.parse(JSON.stringify(placeholders));
+        
+        // Show success feedback
+        saveDocumentBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Saved!';
+        saveDocumentBtn.classList.add('btn-success');
+        saveDocumentBtn.classList.remove('btn-primary');
+        
+        setTimeout(() => {
+            showSendLinkModal(currentDocId);
+            pdfModal.hide();
+            
+            // Reset button state
+            setTimeout(() => {
+                saveDocumentBtn.innerHTML = '<i class="bi bi-send-fill me-2"></i> Save & Get Link';
+                saveDocumentBtn.classList.remove('btn-success');
+                saveDocumentBtn.classList.add('btn-primary');
+            }, 500);
+        }, 1000);
+    });
+    
+    function showSendLinkModal(docId) {
+        const doc = documentsData.find(d => d.id === docId);
+        const placeholdersForDoc = documentPlaceholders[docId];
+        
+        if (!doc || !placeholdersForDoc || placeholdersForDoc.length === 0) {
+            alert('Error: Placeholders not found. Please prepare the document first.');
+            return;
+        }
+        
+        const encodedPlaceholders = encodeURIComponent(JSON.stringify(placeholdersForDoc));
+        const clientLink = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}client.html?pdfUrl=${encodeURIComponent(doc.file_url)}&placeholders=${encodedPlaceholders}&docId=${docId}`;
+        
+        document.getElementById('clientLinkInput').value = clientLink;
+        document.getElementById('openLinkBtn').href = clientLink;
+        document.getElementById('copy-success').classList.add('d-none');
+        
+        sendLinkModal.show();
+    }
+    
+    // Copy link handler
+    document.getElementById('copyLinkBtn').addEventListener('click', () => {
+        const linkInput = document.getElementById('clientLinkInput');
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            const successMsg = document.getElementById('copy-success');
+            successMsg.classList.remove('d-none');
+            setTimeout(() => successMsg.classList.add('d-none'), 3000);
+        });
+    });
+
+    // Reset add mode when modal closes
+    document.getElementById('pdfModal').addEventListener('hidden.bs.modal', () => resetAddMode());
+
+    // Initialize document list
+    function initializeDocumentList() {
+        const container = document.getElementById('documentContainer');
+        const emptyState = document.getElementById('emptyState');
+        
+        // Clear existing content
+        container.innerHTML = '';
+        emptyState.classList.remove('d-none');
+        
+        // Show loading state
+        emptyState.innerHTML = `
+            <div class="spinner mb-3"></div>
+            <p>Loading your documents...</p>
+        `;
+        
+        // Fetch documents from API
+        fetch('http://localhost:8000/signing/documents/decrypted/')
+            .then(res => res.ok ? res.json() : Promise.reject(res))
+            .then(data => {
+                documentsData = data; 
+                
+                if (!data || data.length === 0) {
+                    emptyState.innerHTML = `
+                        <i class="bi bi-file-earmark-plus"></i>
+                        <h4 class="mt-3">No Documents Yet</h4>
+                        <p class="text-muted">Get started by uploading your first document</p>
+                        <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                            <i class="bi bi-plus-circle-fill me-2"></i>Upload Document
+                        </button>
+                    `;
+                    return;
+                }
+                
+                emptyState.classList.add('d-none');
+                
+                // Render document cards
+                data.forEach(doc => {
+                    const fileName = doc.file_path.split('/').pop();
+                    const createdAt = new Date(doc.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                    
+                    const fileExtension = fileName.split('.').pop().toUpperCase();
+                    const fileIcon = getFileIcon(fileName);
+                    const isReadyToSend = documentPlaceholders[doc.id] && documentPlaceholders[doc.id].length > 0;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'document-card';
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <h5 class="card-title">${doc.title}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="document-type">
+                                <i class="bi ${fileIcon} file-icon"></i>
+                                <div>
+                                    <p class="mb-1 fw-semibold">${fileName}</p>
+                                    <span class="file-extension">${fileExtension}</span>
+                                </div>
+                            </div>
+                            <div class="document-meta">
+                                <i class="bi bi-person"></i>
+                                <span>${doc.uploaded_by}</span>
+                            </div>
+                            <div class="document-meta">
+                                <i class="bi bi-calendar"></i>
+                                <span>${createdAt}</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <span class="${getStatusBadge(doc.status)}">${doc.status}</span>
+                            <div class="card-actions">
+                                <button onclick="viewDocument('${doc.file_url}', ${doc.id})" class="btn-view">
+                                    <i class="bi bi-pencil-square"></i> Prepare
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(card);
+                });
+            })
+            .catch(err => {
+                console.error('Error fetching documents:', err);
+                emptyState.innerHTML = `
+                    <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                    <h4 class="mt-3">Error Loading Documents</h4>
+                    <p class="text-muted">Could not connect to the server.</p>
+                    <button class="btn btn-primary mt-2" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise me-2"></i> Try Again
+                    </button>
+                `;
+            });
+    }
+
+    // Upload document logic
+    const uploadModalEl = document.getElementById('uploadDocumentModal');
+    const uploadModal = new bootstrap.Modal(uploadModalEl);
+    const uploadForm = document.getElementById('uploadForm');
+    const submitUploadBtn = document.getElementById('submitUploadBtn');
+    const uploadSpinner = submitUploadBtn.querySelector('.spinner-border');
+    const uploadErrorAlert = document.getElementById('upload-error-alert');
+
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            uploadSpinner.classList.remove('d-none');
+            submitUploadBtn.disabled = true;
+            uploadErrorAlert.classList.add('d-none');
+
+            const formData = new FormData(this);
+            const uploadUrl = 'http://localhost:8000/signing/document/send/';
+
+            fetch(uploadUrl, {
+                method: 'POST',
+                body: formData
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) throw data;
+                return data;
+            })
+            .then(data => {
+                // Show success feedback
+                const successAlert = document.createElement('div');
+                successAlert.className = 'position-fixed bg-success text-white px-4 py-3 rounded';
+                successAlert.style.bottom = '20px';
+                successAlert.style.right = '20px';
+                successAlert.style.zIndex = '9999';
+                successAlert.innerHTML = `
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Document uploaded successfully!
+                `;
+                document.body.appendChild(successAlert);
+                
+                setTimeout(() => {
+                    successAlert.style.opacity = '0';
+                    setTimeout(() => successAlert.remove(), 300);
+                }, 3000);
+                
+                uploadModal.hide();
+                initializeDocumentList();
+            })
+            .catch(errors => {
+                console.error('Upload Error:', errors);
+                let errorMessages = 'An unknown error occurred. Please check the console.';
+                
+                if (typeof errors === 'object' && errors !== null) {
+                    errorMessages = Object.entries(errors).map(([field, messages]) => {
+                        const formattedField = field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ');
+                        return `<strong>${formattedField}:</strong> ${Array.isArray(messages) ? messages.join(' ') : messages}`;
+                    }).join('<br>');
+                }
+                
+                uploadErrorAlert.innerHTML = errorMessages;
+                uploadErrorAlert.classList.remove('d-none');
+            })
+            .finally(() => {
+                uploadSpinner.classList.add('d-none');
+                submitUploadBtn.disabled = false;
+            });
+        });
+    }
+
+    // Reset upload form when modal closes
+    if (uploadModalEl) {
+        uploadModalEl.addEventListener('hidden.bs.modal', () => {
+            if(uploadForm) uploadForm.reset();
+            if(uploadErrorAlert) uploadErrorAlert.classList.add('d-none');
+        });
+    }
+
+    // Initialize the app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', initializeDocumentList);
+  </script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 1: Send Document for Signature</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;</script>
+    <style>
+        /* CSS is unchanged from the previous correct example */
+        :root { --primary-color: #4a6fa5; --secondary-color: #166088; --accent-color: #4fc3f7; --light-color: #f8f9fa; --dark-color: #343a40; --success-color: #28a745; --error-color: #dc3545; --border-radius: 8px; --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); --transition: all 0.3s ease; }
+        body { font-family: 'Roboto', sans-serif; background-color: #f5f7fa; color: var(--dark-color); line-height: 1.6; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .container { max-width: 95%; margin: 2rem auto; padding: 2rem; background-color: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); }
+        header { text-align: center; margin-bottom: 2rem; }
+        header h1 { color: var(--secondary-color); }
+        .upload-container, .document-form, .form-group, .file-info { margin-bottom: 1rem; }
+        .upload-area { border: 2px dashed #ced4da; border-radius: var(--border-radius); padding: 2rem; text-align: center; cursor: pointer; transition: var(--transition); }
+        .upload-area:hover { border-color: var(--accent-color); }
+        .upload-area i { font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .form-group label { font-weight: 500; }
+        .form-group input { padding: 0.75rem; border: 1px solid #ced4da; border-radius: var(--border-radius); font-size: 1rem; }
+        .action-btn { background-color: var(--primary-color); color: white; border: none; padding: 0.75rem; border-radius: var(--border-radius); font-size: 1rem; font-weight: 500; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; }
+        .action-btn:hover { background-color: var(--secondary-color); }
+        .action-btn:disabled { background-color: #6c757d; cursor: not-allowed; }
+        #previewContainer { display: flex; gap: 2rem; }
+        #document-viewer { flex-grow: 1; background-color: #f1f3f5; border: 1px solid #ced4da; border-radius: var(--border-radius); overflow-y: auto; height: 80vh; position: relative; }
+        #document-viewer canvas, #document-viewer img { display: block; margin: 1rem auto; box-shadow: var(--box-shadow); }
+        .placeholder { position: absolute; width: 180px; height: 40px; background-color: rgba(255, 193, 7, 0.3); border: 2px dashed #ffc107; border-radius: 4px; cursor: move; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: #856404; font-weight: 500; user-select: none; }
+        .placeholder i { margin-right: 5px; }
+        #placeholder-controls { width: 300px; flex-shrink: 0; }
+        #placeholder-controls h3 { margin-bottom: 1rem; }
+        #placeholder-list { list-style-type: none; max-height: 50vh; overflow-y: auto; margin-bottom: 1.5rem; }
+        #placeholder-list li { background-color: #f8f9fa; padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .delete-placeholder { color: var(--error-color); cursor: pointer; }
+        .success-message { text-align: center; padding: 2rem; }
+        .success-message i { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; }
+        .success-message h2 { color: var(--success-color); }
+        .link-box { background-color: #e9ecef; border: 1px solid #ced4da; padding: 1rem; border-radius: var(--border-radius); margin: 1rem 0; word-wrap: break-word; }
+        #copyLinkBtn { margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HTML is unchanged -->
+        <header>
+            <h1><i class="fas fa-file-signature"></i> Send Document for Signature</h1>
+            <p>Upload a document, place signature fields, and generate a link for your client.</p>
+        </header>
+
+        <div id="uploadView">
+             <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Drag & Drop your PDF or Image here</p>
+                <input type="file" id="fileInput" style="display: none;" accept="application/pdf,image/*">
+            </div>
+            <div class="form-group">
+                <label for="title">Document Title</label>
+                <input type="text" id="title" placeholder="e.g., Service Agreement" required>
+            </div>
+            <button class="action-btn" id="previewBtn" disabled><i class="fas fa-eye"></i> Prepare Document</button>
+        </div>
+
+        <div id="previewView" style="display: none;">
+            <div id="previewContainer">
+                <div id="document-viewer"></div>
+                <div id="placeholder-controls">
+                    <h3>Signature Fields</h3>
+                    <p style="font-size: 0.9rem; color: #6c757d; margin-bottom: 1rem;">Click on the document to add a signature field. You can drag to reposition.</p>
+                    <ul id="placeholder-list"></ul>
+                    <button class="action-btn" id="confirmBtn" disabled><i class="fas fa-link"></i> Confirm & Generate Link</button>
+                    <button class="action-btn" id="cancelPreviewBtn" style="background-color: #6c757d; margin-top: 0.5rem;"><i class="fas fa-arrow-left"></i> Go Back</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="successView" class="success-message" style="display: none;">
+            <i class="fas fa-check-circle"></i>
+            <h2>Link Generated Successfully!</h2>
+            <p>Copy the link below and send it to your client to sign the document.</p>
+            <div id="signingLink" class="link-box"></div>
+            <button class="action-btn" id="copyLinkBtn"><i class="fas fa-copy"></i> Copy Link</button>
+            <button class="action-btn" id="newUploadBtn" style="background-color: var(--secondary-color); margin-top: 0.5rem;">Send Another Document</button>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- ELEMENT SELECTIONS ---
+    const uploadView = document.getElementById('uploadView'), previewView = document.getElementById('previewView'), successView = document.getElementById('successView');
+    const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), previewBtn = document.getElementById('previewBtn');
+    const confirmBtn = document.getElementById('confirmBtn'), cancelPreviewBtn = document.getElementById('cancelPreviewBtn');
+    const documentViewer = document.getElementById('document-viewer'), placeholderList = document.getElementById('placeholder-list');
+    const signingLink = document.getElementById('signingLink'), copyLinkBtn = document.getElementById('copyLinkBtn'), newUploadBtn = document.getElementById('newUploadBtn');
+    
+    // --- STATE VARIABLES ---
+    let selectedFile = null;
+    let placeholders = [];
+    let isDragging = false, draggedPlaceholder = null, dragOffsetX = 0, dragOffsetY = 0;
+
+    // --- FILE SELECTION ---
+    uploadArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => handleFileSelection(fileInput.files[0]));
+    
+    function handleFileSelection(file) {
+        if (!file) return;
+        selectedFile = file;
+        document.getElementById('title').value = file.name.replace(/\.[^/.]+$/, "");
+        previewBtn.disabled = false;
+    }
+
+    // --- VIEW MANAGEMENT ---
+    previewBtn.addEventListener('click', showPreview);
+    cancelPreviewBtn.addEventListener('click', () => {
+        uploadView.style.display = 'block';
+        previewView.style.display = 'none';
+        resetPreview();
+    });
+    
+    async function showPreview() {
+        if (!selectedFile) return;
+        uploadView.style.display = 'none';
+        previewView.style.display = 'block';
+        documentViewer.innerHTML = '<p style="text-align:center; padding: 2rem;">Loading preview...</p>';
+        const fileReader = new FileReader();
+        fileReader.onload = async function() {
+            const fileData = this.result;
+            if (selectedFile.type === 'application/pdf') {
+                await renderPdf(new Uint8Array(fileData));
+            } else if (selectedFile.type.startsWith('image/')) {
+                renderImage(fileData);
+            }
+        };
+        if (selectedFile.type === 'application/pdf') fileReader.readAsArrayBuffer(selectedFile);
+        else fileReader.readAsDataURL(selectedFile);
+    }
+    
+    // --- RENDERING DOCUMENT (PDF & Image) ---
+    async function renderPdf(typedarray) {
+        try {
+            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            documentViewer.innerHTML = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale: 1.5 });
+                const pageContainer = document.createElement('div');
+                pageContainer.className = 'page-container';
+                pageContainer.style.position = 'relative';
+                pageContainer.style.width = viewport.width + 'px';
+                pageContainer.style.margin = '1rem auto';
+                const canvas = document.createElement('canvas');
+                canvas.dataset.pageNumber = i;
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                pageContainer.appendChild(canvas);
+                documentViewer.appendChild(pageContainer);
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            }
+        } catch (e) { documentViewer.innerHTML = `<p style="color:red;padding:2rem;">Error rendering PDF: ${e.message}</p>`; }
+    }
+    function renderImage(fileDataUrl) {
+        documentViewer.innerHTML = '';
+        const pageContainer = document.createElement('div');
+        pageContainer.className = 'page-container';
+        pageContainer.style.position = 'relative';
+        pageContainer.style.display = 'inline-block';
+        pageContainer.style.margin = '1rem auto';
+        const img = document.createElement('img');
+        img.dataset.pageNumber = 1;
+        img.src = fileDataUrl;
+        pageContainer.appendChild(img);
+        documentViewer.appendChild(pageContainer);
+    }
+    
+    // --- PLACEHOLDER MANAGEMENT ---
+    documentViewer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('placeholder')) return;
+        const pageContainer = e.target.closest('.page-container');
+        if (!pageContainer) return;
+        const rect = pageContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left - 90, y = e.clientY - rect.top - 20;
+        const pageNum = parseInt(pageContainer.querySelector('canvas, img').dataset.pageNumber, 10);
+        placeholders.push({ id: Date.now(), x, y, page: pageNum });
+        drawPlaceholders();
+    });
+
+    placeholderList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-placeholder')) {
+            const id = parseInt(e.target.dataset.id, 10);
+            placeholders = placeholders.filter(p => p.id !== id);
+            drawPlaceholders();
+        }
+    });
+
+    function drawPlaceholders() {
+        document.querySelectorAll('.placeholder').forEach(p => p.remove());
+        placeholderList.innerHTML = '';
+        placeholders.forEach((p, index) => {
+            const pageContainer = documentViewer.querySelector(`[data-page-number="${p.page}"]`).parentElement;
+            if(!pageContainer) return;
+            const el = document.createElement('div');
+            el.className = 'placeholder';
+            el.dataset.id = p.id;
+            el.innerHTML = `<i class="fas fa-pencil-alt"></i> Signature Here`;
+            el.style.left = `${p.x}px`;
+            el.style.top = `${p.y}px`;
+            pageContainer.appendChild(el);
+            const li = document.createElement('li');
+            li.innerHTML = `<span>Field #${index + 1} (Page ${p.page})</span> <i class="fas fa-trash-alt delete-placeholder" data-id="${p.id}"></i>`;
+            placeholderList.appendChild(li);
+        });
+        confirmBtn.disabled = placeholders.length === 0;
+    }
+
+    // --- DRAG & DROP LOGIC ---
+    documentViewer.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('placeholder')) {
+            isDragging = true;
+            draggedPlaceholder = e.target;
+            dragOffsetX = e.clientX - draggedPlaceholder.getBoundingClientRect().left;
+            dragOffsetY = e.clientY - draggedPlaceholder.getBoundingClientRect().top;
+            draggedPlaceholder.style.zIndex = 1000;
+        }
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging || !draggedPlaceholder) return;
+        e.preventDefault();
+        const pageContainer = draggedPlaceholder.parentElement;
+        const containerRect = pageContainer.getBoundingClientRect();
+        let newX = e.clientX - containerRect.left - dragOffsetX;
+        let newY = e.clientY - containerRect.top - dragOffsetY;
+        newX = Math.max(0, Math.min(newX, containerRect.width - draggedPlaceholder.offsetWidth));
+        newY = Math.max(0, Math.min(newY, containerRect.height - draggedPlaceholder.offsetHeight));
+        draggedPlaceholder.style.left = `${newX}px`;
+        draggedPlaceholder.style.top = `${newY}px`;
+    });
+    document.addEventListener('mouseup', (e) => {
+        if (isDragging && draggedPlaceholder) {
+            const id = parseInt(draggedPlaceholder.dataset.id, 10);
+            const placeholder = placeholders.find(p => p.id === id);
+            if (placeholder) {
+                placeholder.x = parseFloat(draggedPlaceholder.style.left);
+                placeholder.y = parseFloat(draggedPlaceholder.style.top);
+            }
+            draggedPlaceholder.style.zIndex = 1;
+        }
+        isDragging = false;
+        draggedPlaceholder = null;
+    });
+    
+    // --- SAVE AND GENERATE LINK ---
+    confirmBtn.addEventListener('click', () => {
+        const fileReader = new FileReader();
+        fileReader.onloadend = function() {
+            const docId = 'doc_' + Date.now();
+            const documentData = {
+                id: docId,
+                title: document.getElementById('title').value,
+                file: fileReader.result,
+                fileType: selectedFile.type,
+                placeholders: placeholders
+            };
+            localStorage.setItem(docId, JSON.stringify(documentData));
+            const link = `${window.location.origin}${window.location.pathname.replace('upload.html', 'sign.html')}?docId=${docId}`;
+            previewView.style.display = 'none';
+            successView.style.display = 'block';
+            signingLink.textContent = link;
+        };
+        fileReader.readAsDataURL(selectedFile);
+    });
+
+    copyLinkBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(signingLink.textContent).then(() => {
+            copyLinkBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => { copyLinkBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Link'; }, 2000);
+        });
+    });
+    
+    newUploadBtn.addEventListener('click', () => window.location.reload());
+    
+    function resetPreview() {
+        placeholders = [];
+        drawPlaceholders();
+    }
+});
+</script>
+</body>
+</html>
