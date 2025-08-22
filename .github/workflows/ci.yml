@@ -1,30 +1,37 @@
-name: Django CI Pipeline
+name: Django CI with MySQL
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     services:
-      postgres:
-        image: postgres:13
+      mysql:
+        image: mysql:8.0
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: testdb
+          MYSQL_DATABASE: testdb
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+          MYSQL_ROOT_PASSWORD: rootpass
         ports:
-          - 5432:5432
+          - 3306:3306
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="mysqladmin ping -h localhost -uroot -prootpass"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=3
 
     env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/testdb
-      DJANGO_SECRET_KEY: testsecretkey
-      DEBUG: 0
+      DB_NAME: testdb
+      DB_USER: testuser
+      DB_PASSWORD: testpass
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
 
     steps:
       - name: Checkout code
@@ -33,15 +40,23 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Wait for MySQL
+        run: |
+          sudo apt-get install -y mysql-client
+          until mysql -h 127.0.0.1 -P 3306 -u testuser -ptestpass -e "SELECT 1"; do
+            echo "Waiting for MySQL..."
+            sleep 5
+          done
+
       - name: Run migrations
         run: python manage.py migrate
 
       - name: Run tests
-        run: python manage.py test
+        run: pytest
