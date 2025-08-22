@@ -69,11 +69,11 @@ WSGI_APPLICATION = 'signing.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'signing',
-        'USER': 'root',
-        'PASSWORD': 'Admin',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': os.getenv('DB_NAME', 'signing'),   # local: signing, CI: testdb
+        'USER': os.getenv('DB_USER', 'root'),      # local: root, CI: testuser
+        'PASSWORD': os.getenv('DB_PASSWORD', 'Admin'), # local: Admin, CI: testpass
+        'HOST': os.getenv('DB_HOST', 'localhost'), # local: localhost, CI: 127.0.0.1
+        'PORT': os.getenv('DB_PORT', '3306'),
     }
 }
 

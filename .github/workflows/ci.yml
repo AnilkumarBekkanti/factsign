@@ -1,10 +1,6 @@
-name: Django CI with MySQL
+name: CI Pipeline
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -14,24 +10,17 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
+          MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: testdb
           MYSQL_USER: testuser
           MYSQL_PASSWORD: testpass
-          MYSQL_ROOT_PASSWORD: rootpass
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -uroot -prootpass"
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
-
-    env:
-      DB_NAME: testdb
-      DB_USER: testuser
-      DB_PASSWORD: testpass
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
 
     steps:
       - name: Checkout code
@@ -40,23 +29,33 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
-      - name: Wait for MySQL
+      - name: Wait for MySQL to be ready
         run: |
           sudo apt-get install -y mysql-client
-          until mysql -h 127.0.0.1 -P 3306 -u testuser -ptestpass -e "SELECT 1"; do
+          until mysql -h 127.0.0.1 -P 3306 -utestuser -ptestpass -e "SELECT 1" testdb; do
             echo "Waiting for MySQL..."
             sleep 5
           done
 
       - name: Run migrations
+        env:
+          DB_NAME: testdb
+          DB_USER: testuser
+          DB_PASSWORD: testpass
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
         run: python manage.py migrate
 
       - name: Run tests
+        env:
+          DB_NAME: testdb
+          DB_USER: testuser
+          DB_PASSWORD: testpass
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
         run: pytest
